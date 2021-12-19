@@ -116,6 +116,7 @@ COPY ..\..\libusb\MS64\dll\libusb*.dll $(TargetDir)</Command>
     <ClInclude Include="..\include\output_file.h" />
     <ClInclude Include="..\include\output_influx.h" />
     <ClInclude Include="..\include\output_mqtt.h" />
+    <ClInclude Include="..\include\output_rtltcp.h" />
     <ClInclude Include="..\include\output_trigger.h" />
     <ClInclude Include="..\include\output_udp.h" />
     <ClInclude Include="..\include\pulse_analyzer.h" />
@@ -157,6 +158,7 @@ COPY ..\..\libusb\MS64\dll\libusb*.dll $(TargetDir)</Command>
     <ClCompile Include="..\src\output_file.c" />
     <ClCompile Include="..\src\output_influx.c" />
     <ClCompile Include="..\src\output_mqtt.c" />
+    <ClCompile Include="..\src\output_rtltcp.c" />
     <ClCompile Include="..\src\output_trigger.c" />
     <ClCompile Include="..\src\output_udp.c" />
     <ClCompile Include="..\src\pulse_analyzer.c" />
