@@ -49,12 +49,11 @@ See [CONTRIBUTING.md](./docs/CONTRIBUTING.md).
        e.g. -t "antenna=A,bandwidth=4.5M,rfnotch_ctrl=false"
   [-f <frequency>] Receive frequency(s) (default: 433920000 Hz)
   [-H <seconds>] Hop interval for polling of multiple frequencies (default: 600 seconds)
-  [-p <ppm_error] Correct rtl-sdr tuner frequency offset error (default: 0)
+  [-p <ppm_error>] Correct rtl-sdr tuner frequency offset error (default: 0)
   [-s <sample rate>] Set sample rate (default: 250000 Hz)
 		= Demodulator options =
   [-R <device> | help] Enable only the specified device decoding protocol (can be used multiple times)
        Specify a negative number to disable a device decoding protocol (can be used multiple times)
-  [-G] Enable blacklisted device decoding protocols, for testing only.
   [-X <spec> | help] Add a general purpose decoder (prepend -R 0 to disable all decoders)
   [-Y auto | classic | minmax] FSK pulse detector mode.
   [-Y level=<dB level>] Manual detection level used to determine pulses (-1.0 to -30.0) (0=auto).
@@ -75,7 +74,7 @@ See [CONTRIBUTING.md](./docs/CONTRIBUTING.md).
   [-w <filename> | help] Save data stream to output file (a '-' dumps samples to stdout)
   [-W <filename> | help] Save data stream to output file, overwrite existing file
 		= Data output options =
-  [-F kv | json | csv | mqtt | influx | syslog | null | help] Produce decoded output in given format.
+  [-F kv | json | csv | mqtt | influx | syslog | trigger | null | help] Produce decoded output in given format.
        Append output to file with :<filename> (e.g. -F csv:log.csv), defaults to stdout.
        Specify host/port for syslog with e.g. -F syslog:127.0.0.1:1514
   [-M time[:<options>] | protocol | level | noise[:secs] | stats | bits | help] Add various meta data to each output.
@@ -125,7 +124,7 @@ See [CONTRIBUTING.md](./docs/CONTRIBUTING.md).
     [37]* Inovalley kw9015b, TFA Dostmann 30.3161 (Rain and temperature sensor)
     [38]  Generic temperature sensor 1
     [39]  WG-PB12V1 Temperature Sensor
-    [40]  Acurite 592TXR Temp/Humidity, 5n1 Weather Station, 6045 Lightning, 3N1, Atlas
+    [40]  Acurite 592TXR Temp/Humidity, 5n1 Weather Station, 6045 Lightning, 899 Rain, 3N1, Atlas
     [41]  Acurite 986 Refrigerator / Freezer Thermometer
     [42]  HIDEKI TS04 Temperature, Humidity, Wind and Rain Sensor
     [43]  Watchman Sonic / Apollo Ultrasonic / Beckett Rocket oil tank monitor
@@ -258,7 +257,7 @@ See [CONTRIBUTING.md](./docs/CONTRIBUTING.md).
     [172]  Bresser Weather Center 6-in-1, 7-in-1 indoor, new 5-in-1, 3-in-1 wind gauge, Froggit WH6000, Ventus C8488A
     [173]  Bresser Weather Center 7-in-1
     [174]  EcoDHOME Smart Socket and MCEE Solar monitor
-    [175]  LaCrosse Technology View LTV-R1, LTV-R3 Rainfall Gauge, LTV-W1 Wind Sensor
+    [175]  LaCrosse Technology View LTV-R1, LTV-R3 Rainfall Gauge, LTV-W1/W2 Wind Sensor
     [176]  BlueLine Innovations Power Cost Monitor
     [177]  Burnhard BBQ thermometer
     [178]  Security+ (Keyfob)
@@ -294,8 +293,17 @@ See [CONTRIBUTING.md](./docs/CONTRIBUTING.md).
     [208]  AVE TPMS
     [209]  SimpliSafe Gen 3 Home Security System
     [210]  Yale HSA (Home Security Alarm), YES-Alarmkit
+    [211]  Regency Ceiling Fan Remote (-f 303.75M to 303.96M)
+    [212]  Renault 0435R TPMS
+    [213]  Fine Offset Electronics WS80 weather station
+    [214]  EMOS E6016 weatherstation with DCF77
+    [215]  Altronics X7064 temperature and humidity sensor
+    [216]* ANT and ANT+ devices
+    [217]  EMOS E6016 rain gauge
+    [218]  Microchip HCS200/HCS300 KeeLoq Hopping Encoder based remotes (FSK)
+    [219]  Fine Offset Electronics WH45 air quality sensor
 
-* Disabled by default, use -R n or -G
+* Disabled by default, use -R n or a conf file to enable
 
 
 		= Input device selection =
@@ -336,7 +344,8 @@ where:
 <name> can be any descriptive name tag you need in the output
 <modulation> is one of:
 	OOK_MC_ZEROBIT :  Manchester Code with fixed leading zero bit
-	OOK_PCM :         Pulse Code Modulation (RZ or NRZ)
+	OOK_PCM :         Non Return to Zero coding (Pulse Code)
+	OOK_RZ :          Return to Zero coding (Pulse Code)
 	OOK_PPM :         Pulse Position Modulation
 	OOK_PWM :         Pulse Width Modulation
 	OOK_DMC :         Differential Manchester Code
@@ -348,7 +357,7 @@ where:
 	FSK_MC_ZEROBIT :  Manchester Code with fixed leading zero bit
 <short>, <long>, <sync> are nominal modulation timings in us,
 <reset>, <gap>, <tolerance> are maximum modulation timings in us:
-PCM     short: Nominal width of pulse [us]
+PCM/RZ  short: Nominal width of pulse [us]
          long: Nominal width of bit period [us]
 PPM     short: Nominal width of '0' gap [us]
          long: Nominal width of '1' gap [us]
@@ -377,7 +386,7 @@ E.g. -X "n=doorbell,m=OOK_PWM,s=400,l=800,r=7000,g=1000,match={24}0xa9878c,repea
 
 
 		= Output format option =
-  [-F kv|json|csv|mqtt|influx|syslog|null] Produce decoded output in given format.
+  [-F kv|json|csv|mqtt|influx|syslog|trigger|null] Produce decoded output in given format.
 	Without this option the default is KV output. Use "-F null" to remove the default.
 	Append output to file with :<filename> (e.g. -F csv:log.csv), defaults to stdout.
 	Specify MQTT server with e.g. -F mqtt://localhost:1883

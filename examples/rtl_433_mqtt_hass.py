@@ -77,12 +77,6 @@ MQTT Explorer also makes it easy to publish an empty config topic to delete an
 entity from Home Assistant.
 
 
-Known Issues:
-
-Currently there is no white or black lists, so any device that rtl_433 receives
-including transients, false positives, will create a bunch of entities in
-Home Assistant.
-
 As of 2020-10, Home Assistant MQTT auto discovery doesn't currently support
 supplying "friendly name", and "area" key, so some configuration must be
 done in Home Assistant.
@@ -173,7 +167,8 @@ mappings = {
             "name": "Battery",
             "unit_of_measurement": "%",
             "value_template": "{{ float(value) * 99 + 1 }}",
-            "state_class": "measurement"
+            "state_class": "measurement",
+            "entity_category": "diagnostic"
         }
     },
 
@@ -290,7 +285,7 @@ mappings = {
             "state_class": "measurement"
         }
     },
-  
+
     "wind_max_km_h": {
         "device_type": "sensor",
         "object_suffix": "GS",
@@ -386,7 +381,8 @@ mappings = {
             "device_class": "safety",
             "force_update": "true",
             "payload_on": "1",
-            "payload_off": "0"
+            "payload_off": "0",
+            "entity_category": "diagnostic"
         }
     },
 
@@ -397,7 +393,8 @@ mappings = {
             "device_class": "safety",
             "force_update": "true",
             "payload_on": "1",
-            "payload_off": "0"
+            "payload_off": "0",
+            "entity_category": "diagnostic"
         }
     },
 
@@ -408,7 +405,8 @@ mappings = {
             "device_class": "signal_strength",
             "unit_of_measurement": "dB",
             "value_template": "{{ value|float|round(2) }}",
-            "state_class": "measurement"
+            "state_class": "measurement",
+            "entity_category": "diagnostic"
         }
     },
 
@@ -419,7 +417,8 @@ mappings = {
             "device_class": "signal_strength",
             "unit_of_measurement": "dB",
             "value_template": "{{ value|float|round(2) }}",
-            "state_class": "measurement"
+            "state_class": "measurement",
+            "entity_category": "diagnostic"
         }
     },
 
@@ -430,7 +429,8 @@ mappings = {
             "device_class": "signal_strength",
             "unit_of_measurement": "dB",
             "value_template": "{{ value|float|round(2) }}",
-            "state_class": "measurement"
+            "state_class": "measurement",
+            "entity_category": "diagnostic"
         }
     },
 
@@ -473,16 +473,17 @@ mappings = {
         "device_type": "sensor",
         "object_suffix": "lux",
         "config": {
-            "name": "Outside Luminancee",
+            "name": "Outside Luminance",
             "unit_of_measurement": "lux",
-            "value_template": "{{ value|int }}"
+            "value_template": "{{ value|int }}",
+            "state_class": "measurement"
         }
     },
-    "light_lux": {
+    "lux": {
         "device_type": "sensor",
         "object_suffix": "lux",
         "config": {
-            "name": "Outside Luminancee",
+            "name": "Outside Luminance",
             "unit_of_measurement": "lux",
             "value_template": "{{ value|int }}",
             "state_class": "measurement"
@@ -495,7 +496,8 @@ mappings = {
         "config": {
             "name": "UV Index",
             "unit_of_measurement": "UV Index",
-            "value_template": "{{ value|int }}"
+            "value_template": "{{ value|int }}",
+            "state_class": "measurement"
         }
     },
     "uvi": {
@@ -538,6 +540,16 @@ mappings = {
             "name": "Lightning Strike Count",
             "value_template": "{{ value|int }}",
             "state_class": "total_increasing"
+        }
+    },
+
+    "consumption_data": {
+        "device_type": "sensor",
+        "object_suffix": "consumption",
+        "config": {
+            "name": "SCM Consumption Value",
+            "value_template": "{{ value|int }}",
+            "state_class": "total_increasing",
         }
     },
 
@@ -627,6 +639,9 @@ def publish_config(mqttc, topic, model, instance, mapping):
     if args.force_update:
         config["force_update"] = "true"
 
+    if args.expire_after:
+        config["expire_after"] = args.expire_after
+
     logging.debug(path + ":" + json.dumps(config))
 
     mqttc.publish(path, json.dumps(config), retain=args.retain)
@@ -650,6 +665,11 @@ def bridge_event_to_hass(mqttc, topicprefix, data):
     if not instance:
         # no unique device identifier
         logging.warning("No suitable identifier found for model: ", model)
+        return
+
+    if args.ids and data.get("id") not in args.ids:
+        # not in the safe list
+        logging.debug("Device (%s) is not in the desired list of device ids: [%s]" % (data["id"], ids))
         return
 
     # detect known attributes
@@ -680,6 +700,10 @@ def rtl_433_bridge():
 
     if args.user is not None:
         mqttc.username_pw_set(args.user, args.password)
+
+    if args.ca_cert is not None:
+        mqttc.tls_set(ca_certs=args.ca_cert)
+
     mqttc.on_connect = mqtt_connect
     mqttc.on_disconnect = mqtt_disconnect
     mqttc.on_message = mqtt_message
@@ -716,6 +740,7 @@ if __name__ == "__main__":
                         help="MQTT hostname to connect to (default: %(default)s)")
     parser.add_argument("-p", "--port", type=int, default=1883,
                         help="MQTT port (default: %(default)s)")
+    parser.add_argument("-c", "--ca_cert", type=str, help="MQTT TLS CA certificate path")
     parser.add_argument("-r", "--retain", action="store_true")
     parser.add_argument("-f", "--force_update", action="store_true",
                         help="Append 'force_update = true' to all configs.")
@@ -731,6 +756,11 @@ if __name__ == "__main__":
                         dest="discovery_interval",
                         default=600,
                         help="Interval to republish config topics in seconds (default: %(default)d)")
+    parser.add_argument("-x", "--expire-after", type=int,
+                        dest="expire_after",
+                        help="Number of seconds with no updates after which the sensor becomes unavailable")
+    parser.add_argument("-I", "--ids", type=int, nargs="+",
+                        help="ID's of devices that will be discovered (omit for all)")
     args = parser.parse_args()
 
     if args.debug and args.quiet:
@@ -752,5 +782,11 @@ if __name__ == "__main__":
 
     if not args.user or not args.password:
         logging.warning("User or password is not set. Check credentials if subscriptions do not return messages.")
+
+    if args.ids:
+        ids = ', '.join(str(id) for id in args.ids)
+        logging.info("Only discovering devices with ids: [%s]" % ids)
+    else:
+        logging.info("Discovering all devices")
 
     run()

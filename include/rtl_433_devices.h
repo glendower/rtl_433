@@ -218,6 +218,15 @@
     DECL(tpms_ave) \
     DECL(simplisafe_gen3) \
     DECL(yale_hsa) \
+    DECL(regency_fan) \
+    DECL(tpms_renault_0435r) \
+    DECL(fineoffset_ws80) \
+    DECL(emos_e6016) \
+    DECL(altronics_7064) \
+    DECL(ant_antplus) \
+    DECL(emos_e6016_rain) \
+    DECL(hcs200_fsk) \
+    DECL(fineoffset_wh45) \
 
     /* Add new decoders here. */
 
